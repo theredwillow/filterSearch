@@ -1,0 +1,111 @@
+.rounded {
+  border-radius: 10px;
+  border: 1px solid #dddddd;
+  padding: 10px;
+}
+
+.rb-gray {
+  background: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#f4f5f5));
+}
+
+.rb-blue {
+  background: -webkit-gradient(linear, left top, left bottom, from(#41bce4), to(#0966af));
+  color: white;
+}
+
+#cancel-filter-button {
+  background-color: red;
+  color: white;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  font: bold 20px/100% Georgia, serif;
+}
+
+#press-search-notification {
+  font: 15px/100% American Typewriter, serif;
+  position: absolute;
+  top: 7px;
+  left: 150px;
+  visibility: hidden;
+}
+
+#search-area {
+  width: 700px;
+  position: relative;
+  min-height: 200px;
+}
+
+.warn-span {
+  display: none;
+  color: yellow;
+}
+
+#filter-search {
+  width: 90%;
+  padding: 5px;
+  border-radius: 6px;
+}
+
+#filter-selection-box {
+  top: 10px;
+  width: 400px;
+  right: 10px;
+  bottom: 10px;
+  position: absolute;
+  z-index: 5;
+}
+
+#unused-filters {
+  width: 97%;
+  overflow-y: scroll;
+  height: 115px;
+  -moz-box-shadow: inset 0px 0px 5px #000000;
+  -webkit-box-shadow: inset 0px 0px 5px #000000;
+  box-shadow: inset 0px 0px 5px #000000;
+  margin-top: 5px;
+  padding: 8px;
+}
+
+#saved-search-box {}
+
+#listings-box {
+  border: 1px solid #dddddd;
+}
+
+.search-filter {
+  padding: 5px;
+  margin: 5px;
+  background-color: green;
+  -moz-box-shadow: 0px 0px 2px #000000;
+  -webkit-box-shadow: 0px 0px 2px #000000;
+  box-shadow: 0px 0px 2px #000000;
+}
+
+.filter-details {
+  background-color: black;
+  padding: 5px;
+  position: relative;
+}
+
+.add-button {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+}
+
+.selectedFilter {
+  font: 12px/120% Georgia, serif;
+  background-color: yellow;
+  display: inline-block;
+  padding: 5px;
+  margin: 2.5px;
+  position: relative;
+}
+
+.strikeThrough {
+  text-decoration: line-through;
+  display: block;
+}
