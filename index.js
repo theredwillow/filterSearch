@@ -19,7 +19,6 @@ var sortFilters = function() {
     Object.keys(searchFilters).forEach(groupByPriority);
 
     var priorities = Object.keys(priorityGroups).reverse();
-    console.log(priorities);
     var addBack = function(thisFilter)
     {
         unselectedFilters.appendChild(thisFilter.box);
@@ -99,12 +98,10 @@ var WordHelper = function() {
         var str = filterSearchBar.value;
         var re = new RegExp(field, "gi");
         if ( re.test(str) ) {
-        	console.log(field, "passes the test on ", str);
-        	thisWordHelper.match = field;
         	return true;
         }
         else
-        	return false;
+            return false;
     };
 
     this.update = function(thisFilter) {
@@ -112,57 +109,66 @@ var WordHelper = function() {
         	return;
     	thisFilter.priority = thisFilter.priority++ || 1;
         thisFilter.form.openView();
-        var filterInHistory = thisWordHelper.history[thisFilter.name];
-        if (!filterInHistory)
-	        filterInHistory = thisFilter;
-        // console.log("This filter matches:", thisFilter);
+        if (!thisWordHelper.history[thisFilter.name]) {
+            thisWordHelper.history[thisFilter.name] = thisFilter;
+            console.log("Added one, new history:", thisWordHelper.history);
+        }
     };
 
 	this.reset = function(filterName) {
     	var filterInHistory = thisWordHelper.history[filterName];
-        var filterInUse = searchFilters[filterName];
-    	filterInUse = filterInHistory;
-        delete thisWordHelper.history[filterName];
+        // console.log( "Reset check:", filterInHistory, searchFilters[filterName]);
+        if (filterInHistory) {
+            console.log("Reseting", filterName);
+    	    searchFilters[filterName] = filterInHistory;
+            delete thisWordHelper.history[filterName];
+        }
     };
 
     this.checkFilters = function(e) {
         var searchFilterNames = Object.keys(searchFilters);
-        for (i = 0; i < searchFilterNames.length; i++) {
-            var thisFilterName = searchFilterNames[i];
-            console.log("thisFilterName", i, thisFilterName);
+        // console.log("searchFilterNames", searchFilterNames);
+        for (a = 0; a < searchFilterNames.length; a++) {
+            var thisFilterName = searchFilterNames[a];
+            // console.log("thisFilterName", a, thisFilterName);
             var thisFilter = searchFilters[thisFilterName];
             if (thisWordHelper.checkWord(thisFilterName))
                 thisWordHelper.update(thisFilter);
+            else
+                thisWordHelper.reset(thisFilter.name);
 
             var theseOptionNames = Object.keys(thisFilter.options);
-            for (j = 0; j < theseOptionNames.length; j++) {
-                var thisOptionName = theseOptionNames[j];
+            for (b = 0; b < theseOptionNames.length; b++) {
+                var thisOptionName = theseOptionNames[b];
                 var thisOption = thisFilter.options[thisOptionName];
                 if (thisOption.tag && thisWordHelper.checkWord(thisOption.tag))
                     thisWordHelper.update(thisFilter);
+                else
+                    thisWordHelper.reset(thisFilter.name);
 
                 var theseChoices = thisOption.choices;
                 if( theseChoices.length == 1 ) {
                 	// console.log("Skipping this, [] possible");
                 	continue; // Handles [TEXT] matches
                 }
-                for (k = 0; k < theseChoices.length; k++) {
-                    var thisChoice = theseChoices[k];
+                for (c = 0; c < theseChoices.length; c++) {
+                    var thisChoice = theseChoices[c];
                     if (thisWordHelper.checkWord(thisChoice)) {
                         
                         thisWordHelper.update(thisFilter);
                         
                         var query = "#" + thisFilter.name + " [name='" + thisChoice + "'],[id='"+ thisChoice +"']";
-                        console.log("query", query);
+                        // console.log("query", query);
                         var htmlElement = document.querySelector(query);
                         htmlElement.setAttribute("selected", "");
                         htmlElement.setAttribute("checked", "");
                         thisFilter.validate();
 
                     }
+                    else
+                        thisWordHelper.reset(thisFilter.name);
                 }
             }
-
         }
     };
 };
