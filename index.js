@@ -90,18 +90,13 @@ var filterSearchBar = document.getElementById("filter-search");
 var WordHelper = function() {
     var thisWordHelper = this;
 
-	this.history = {
-    	
-    };
+	this.history = { };
 
     this.checkWord = function(field) {
         var str = filterSearchBar.value;
         var re = new RegExp(field, "gi");
-        if ( re.test(str) ) {
-        	return true;
-        }
-        else
-            return false;
+        thisWordHelper.matchingField = field;
+        return re.test(str);
     };
 
     this.update = function(thisFilter) {
@@ -109,23 +104,41 @@ var WordHelper = function() {
         	return;
     	thisFilter.priority = thisFilter.priority++ || 1;
         thisFilter.form.openView();
+
+        // Add to history in case you need to reset it later
         if (!thisWordHelper.history[thisFilter.name]) {
-            thisWordHelper.history[thisFilter.name] = thisFilter;
-            console.log("Added one, new history:", thisWordHelper.history);
+            thisWordHelper.history[thisFilter.name] = JSON.parse(JSON.stringify(thisFilter)); // You have to do this JSON stuff to break the reference
+            thisWordHelper.history[thisFilter.name].matchingFields = [ thisWordHelper.matchingField ];
         }
+        else if ( !thisWordHelper.history[thisFilter.name].matchingFields.includes(thisWordHelper.matchingField) )
+            thisWordHelper.history[thisFilter.name].matchingFields.push( thisWordHelper.matchingField );
+
+        delete thisWordHelper.matchingField;
     };
 
-	this.reset = function(filterName) {
+	this.reset = function(filterName, check) {
     	var filterInHistory = thisWordHelper.history[filterName];
-        // console.log( "Reset check:", filterInHistory, searchFilters[filterName]);
-        if (filterInHistory) {
-            console.log("Reseting", filterName);
-    	    searchFilters[filterName] = filterInHistory;
+        if ( filterInHistory && (check || filterInHistory.matchingFields.includes(thisWordHelper.matchingField)) ) {
+            var optionNamesInHistory = Object.keys(filterInHistory.options);
+            for (i = 0; i < optionNamesInHistory.length; i++) {
+                var stateInHistory = filterInHistory.options[ optionNamesInHistory[i] ].state;
+                if (stateInHistory) {
+                    searchFilters[filterName].form.changeChoice(stateInHistory);
+                }
+            }
+            searchFilters[filterName].validate();
             delete thisWordHelper.history[filterName];
         }
+        delete thisWordHelper.matchingFields;
     };
 
     this.checkFilters = function(e) {
+
+        if ( e.keyCode == 13 ) {
+            thisWordHelper.add();
+            return;
+        }
+
         var searchFilterNames = Object.keys(searchFilters);
         // console.log("searchFilterNames", searchFilterNames);
         for (a = 0; a < searchFilterNames.length; a++) {
@@ -154,16 +167,8 @@ var WordHelper = function() {
                 for (c = 0; c < theseChoices.length; c++) {
                     var thisChoice = theseChoices[c];
                     if (thisWordHelper.checkWord(thisChoice)) {
-                        
                         thisWordHelper.update(thisFilter);
-                        
-                        var query = "#" + thisFilter.name + " [name='" + thisChoice + "'],[id='"+ thisChoice +"']";
-                        // console.log("query", query);
-                        var htmlElement = document.querySelector(query);
-                        htmlElement.setAttribute("selected", "");
-                        htmlElement.setAttribute("checked", "");
-                        thisFilter.validate();
-
+                        thisFilter.form.changeChoice(thisChoice);
                     }
                     else
                         thisWordHelper.reset(thisFilter.name);
@@ -171,6 +176,35 @@ var WordHelper = function() {
             }
         }
     };
+
+    this.add = function() {
+        var lengthChecker = 0;
+        var bestMatches = [];
+        var namesInHistory = Object.keys(thisWordHelper.history);
+        for (i = 0; i < namesInHistory.length; i++) {
+            var thisName = namesInHistory[i];
+            var thisLength = thisWordHelper.history[ thisName ].matchingFields.length;
+            if (thisLength > lengthChecker) {
+                lengthChecker = thisLength;
+                bestMatches = [ thisName ];
+            }
+            else if ( thisLength == lengthChecker )
+                bestMatches.push(thisName);
+        }
+        if ( bestMatches.length == 1 ) {
+            if ( searchFilters[ bestMatches[0] ].validated ) {
+                filterSearchBar.value = "";
+                delete thisWordHelper.history[ bestMatches[0] ];
+                Object.keys( thisWordHelper.history ).forEach(function(tF){ thisWordHelper.reset(tF, true); });
+                searchFilters[ bestMatches[0] ].add();
+            }
+            else
+                console.log( "You can't submit this yet, you still need", searchFilters[ bestMatches[0] ].missingNames );
+        }
+        else
+            console.log("Sorry, no obvious selections. You still need to pick between", bestMatches);
+    };
+
 };
 var wordHelper = new WordHelper();
 filterSearchBar.addEventListener("keyup", wordHelper.checkFilters);
@@ -322,6 +356,30 @@ var FilterForm = function(thisFilter) {
 	this.openView = function() {
     	thisFilter.detailsBox.style.display = "block";
         thisFilter.validate();
+    };
+
+    this.changeChoice = function(choice) {
+
+        // Find the choice
+        var query = "#" + thisFilter.name + " [name='" + choice + "']";
+        query += ", #" + thisFilter.name + " [id='" + choice +"']";
+        // console.log("query", query);
+        var htmlElement = document.querySelector(query);
+
+        // Undo the current selected or checked option
+        var children = htmlElement.parentElement.children;
+        for (i = 0; i < children.length; i++) {
+            var thisChild = children[i];
+            thisChild.removeAttribute("selected");
+            thisChild.removeAttribute("checked");
+        }
+
+        // Set the choice
+        htmlElement.setAttribute("selected", "");
+        htmlElement.setAttribute("checked", "");
+
+        thisFilter.validate();
+
     };
 
     this.validate = function() {
@@ -537,11 +595,10 @@ var SearchFilter = function(name) {
 var bedrooms = new SearchFilter("bedrooms");
 bedrooms.options = {
     "numOfBeds": {
-        "tag": "Number of beds",
+        "tag": "# of beds",
         "choices": ["Studio", "Convertible", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
-    numOfBaths: {
-        "tag": "",
+    "moreOrLess": {
         "choices": ["Exactly", "Or More", "Or Less"]
     }
 };
