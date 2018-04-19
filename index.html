@@ -10,31 +10,36 @@
 </head>
 <body>
 
-<div id="search-area" class="rounded rb-gray">
-  <span id="press-search-notification">&#9660;&nbsp;Your search criteria has changed, press to refresh results</span> Search
-  <br/>
-  <input type="text" />
-  <button class="rb-blue rounded">Search</button>
-  <button class="rb-blue rounded" id="add-filter-button">Add a filter</button>
-  <br/><br/>
-  <div id="used-filters"></div>
-  <div id="filter-selection-box" class="rounded rb-blue">
-  <div id="pending-filters">Select filters to add</div>
-  <div id="cancel-filter-button" class="rounded">X</div>
-  <input type="text" placeholder="Search for a filter (i.e. 3 bedrooms, dogs, etc...)" id="filter-search" /><br/>
-  <div id="unused-filters"></div>
-  </div>
-  <div id="saved-search-box" class="rounded">
-    <button class="rb-blue rounded">
-      12345 ZIP
-    </button>
-    <button class="rb-blue rounded">
-      2/1.5/1 Chicago
-    </button>
-  </div>
-</div>
-
-<br/>
-<table id="listings-box"></table>
+    <div id="search-area" class="rounded rb-gray">
+        <span id="press-search-notification">&#9660;&nbsp;Your search criteria has changed, press to refresh results</span> Search
+        <br/>
+        <input type="text" />
+        <button class="rb-blue rounded">Search</button>
+        <button class="rb-blue rounded" id="add-filter-button">Add a filter</button>
+        <br/>
+        <div id="selected-filters"></div><br/>
+        <div id="filter-selection-box" class="rounded rb-blue">
+            <div id="pending-filters">
+                Select filters to add</div>
+            <div id="cancel-filter-button" class="rounded">X</div>
+            <input type="text" placeholder="Search for a filter (i.e. 3 bedrooms, dogs, etc...)" id="filter-search" /><br/>
+            <div id="unselected-filters"></div>
+        </div>
+        <div id="saved-search-box" class="rounded">
+            <button class="rb-blue rounded">
+          12345 ZIP
+        </button>
+            <button class="rb-blue rounded">
+          2/1.5/1 Chicago
+        </button>
+        </div>
+    </div>
+    
+    <br/>
+    <div id="search-result-info">
+        Search results for "<span id="current-search-term"></span>"<br/><br/>
+        <div id="used-filters"></div>
+    </div>
+    
 
 </body>

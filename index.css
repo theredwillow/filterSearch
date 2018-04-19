@@ -58,7 +58,7 @@
   z-index: 5;
 }
 
-#unused-filters {
+#unselected-filters {
   width: 97%;
   overflow-y: scroll;
   height: 115px;
