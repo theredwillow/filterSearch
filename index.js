@@ -64,7 +64,7 @@ var notifyToPressSearch = function() {
     var searchCriteriaNames = Object.keys(searchCriteria);
     for (i = 0; i < searchCriteriaNames.length; i++) {
         var thisSC = searchCriteria[searchCriteriaNames[i]];
-        if (!searchFilters[searchCriteriaNames[i]].selected) {
+        if (searchFilters[searchCriteriaNames[i]] && !searchFilters[searchCriteriaNames[i]].selected) {
             warnToPressSearch = "visible";
             break;
         }
@@ -106,12 +106,12 @@ var WordHelper = function() {
         thisFilter.form.openView();
 
         // Add to history in case you need to reset it later
-        if (!thisWordHelper.history[thisFilter.name]) {
-            thisWordHelper.history[thisFilter.name] = JSON.parse(JSON.stringify(thisFilter)); // You have to do this JSON stuff to break the reference
-            thisWordHelper.history[thisFilter.name].matchingFields = [ thisWordHelper.matchingField ];
+        if (!thisWordHelper.history[thisFilter.id]) {
+            thisWordHelper.history[thisFilter.id] = JSON.parse(JSON.stringify(thisFilter)); // You have to do this JSON stuff to break the reference
+            thisWordHelper.history[thisFilter.id].matchingFields = [ thisWordHelper.matchingField ];
         }
-        else if ( !thisWordHelper.history[thisFilter.name].matchingFields.includes(thisWordHelper.matchingField) )
-            thisWordHelper.history[thisFilter.name].matchingFields.push( thisWordHelper.matchingField );
+        else if ( !thisWordHelper.history[thisFilter.id].matchingFields.includes(thisWordHelper.matchingField) )
+            thisWordHelper.history[thisFilter.id].matchingFields.push( thisWordHelper.matchingField );
 
         delete thisWordHelper.matchingField;
     };
@@ -148,7 +148,7 @@ var WordHelper = function() {
             if (thisWordHelper.checkWord(thisFilterName))
                 thisWordHelper.update(thisFilter);
             else
-                thisWordHelper.reset(thisFilter.name);
+                thisWordHelper.reset(thisFilter.id);
 
             var theseOptionNames = Object.keys(thisFilter.options);
             for (b = 0; b < theseOptionNames.length; b++) {
@@ -157,7 +157,7 @@ var WordHelper = function() {
                 if (thisOption.tag && thisWordHelper.checkWord(thisOption.tag))
                     thisWordHelper.update(thisFilter);
                 else
-                    thisWordHelper.reset(thisFilter.name);
+                    thisWordHelper.reset(thisFilter.id);
 
                 var theseChoices = thisOption.choices;
                 if( theseChoices.length == 1 ) {
@@ -171,7 +171,7 @@ var WordHelper = function() {
                         thisFilter.form.changeChoice(thisChoice);
                     }
                     else
-                        thisWordHelper.reset(thisFilter.name);
+                        thisWordHelper.reset(thisFilter.id);
                 }
             }
         }
@@ -361,8 +361,8 @@ var FilterForm = function(thisFilter) {
     this.changeChoice = function(choice) {
 
         // Find the choice
-        var query = "#" + thisFilter.name + " [name='" + choice + "']";
-        query += ", #" + thisFilter.name + " [id='" + choice +"']";
+        var query = "#" + thisFilter.id + " [name='" + choice + "']";
+        query += ", #" + thisFilter.id + " [id='" + choice +"']";
         // console.log("query", query);
         var htmlElement = document.querySelector(query);
 
@@ -384,7 +384,7 @@ var FilterForm = function(thisFilter) {
 
     this.validate = function() {
         thisFilter.missingNames = [];
-        var filterBoxId = "#" + thisFilter.name;
+        var filterBoxId = "#" + thisFilter.id;
 
         var thisFilterForm = this;
         var removeFromMissing = function(nameFound) {
@@ -434,6 +434,7 @@ var FilterForm = function(thisFilter) {
         }
 
         var addButton = document.querySelector(filterBoxId + " .add-button");
+        // console.log("filterBoxId", filterBoxId);
         if (!thisFilter.missingNames.length) {
             thisFilter.validated = true;
             addButton.removeAttribute("disabled", false);
@@ -456,11 +457,7 @@ var FilterForm = function(thisFilter) {
     thisFilter.detailsBox.style.display = "none";
 
     var thisForm = this;
-    var drawAnOption = function(thisOptionName) {
-        thisForm.drawOption(thisOptionName);
-    }
-    Object.keys(thisFilter.options).forEach(drawAnOption);
-
+    Object.keys(thisFilter.options).forEach(function(thisOptionName) { thisForm.drawOption(thisOptionName); });
 
     var addButton = document.createElement("button");
     addButton.setAttribute("type", "button");
@@ -478,6 +475,7 @@ var SearchFilter = function(name) {
     var unselectedFilters = document.getElementById("unselected-filters");
 
     this.name = name || "";
+    this.id = this.name.replace(/[\s,()/]/g, "");
     this.selected = false;
     this.validated = false;
 
@@ -501,7 +499,7 @@ var SearchFilter = function(name) {
 
     this.drawUsed = function() {
         this.display = document.createElement("div");
-        this.display.id = this.name + "-used";
+        this.display.id = this.id + "-used";
         this.display.className = "rounded-border usedFilter";
         this.display.innerHTML += "<b>" + thisFilter.name + "</b><br/>";
 
@@ -534,7 +532,7 @@ var SearchFilter = function(name) {
         }
     
         this.display = document.createElement("div");
-        this.display.id = this.name + "-selected";
+        this.display.id = this.id + "-selected";
         this.display.className = "rounded-border selectedFilter";
         this.display.addEventListener("click", this.remove);
         this.display.innerHTML += "<b>" + thisFilter.name + "</b><br/>";
@@ -571,7 +569,7 @@ var SearchFilter = function(name) {
         }
     
         this.box = document.createElement("div");
-        this.box.id = this.name;
+        this.box.id = this.id;
         this.box.className = "search-filter rounded-border";
 
         this.nameBox = document.createElement("span");
@@ -592,7 +590,7 @@ var SearchFilter = function(name) {
 };
 
 // Bedroom example, no defaults
-var bedrooms = new SearchFilter("bedrooms");
+var bedrooms = new SearchFilter("Bedrooms");
 bedrooms.options = {
     "numOfBeds": {
         "tag": "# of beds",
@@ -603,34 +601,330 @@ bedrooms.options = {
     }
 };
 
-// Bathroom example, all defaults
-var bathrooms = new SearchFilter("bathrooms");
+var bathrooms = new SearchFilter("Bathrooms");
 bathrooms.options = {
     "numOfBaths": {
         "tag": "# of baths",
-        "default": 1,
         "choices": [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5]
     },
     "moreOrLess": {
-        "default": "Exactly",
         "choices": ["Exactly", "Or More", "Or Less"]
     }
 };
 
-var rent = new SearchFilter("rent");
+var rent = new SearchFilter("Rent");
 rent.options = {
     "min": {
-        "tag": "minimum",
+        "tag": "Minimum",
         "choices": ["[TEXT]"]
     },
     "max": {
-        "tag": "maximum",
+        "tag": "Maximum",
         "choices": ["[TEXT]"]
     }
 };
 
+var sqft = new SearchFilter("Square Footage");
+sqft.options = {
+    "min": {
+        "tag": "Minimum",
+        "choices": ["[TEXT]"]
+    },
+    "max": {
+        "tag": "Maximum",
+        "choices": ["[TEXT]"]
+    }
+};
+
+var zip = new SearchFilter("ZIP Code");
+zip.options = {
+    "zip": {
+        "tag": "ZIP Code",
+        "choices": ["[TEXT]"]
+    }
+};
+
+var mlsId = new SearchFilter("MLS ID");
+mlsId.options = {
+    "mlsId": {
+        "tag": "MLS ID",
+        "choices": ["[TEXT]"]
+    }
+};
+
+var rbId = new SearchFilter("Rental Beast ID");
+rbId.options = {
+    "mlsId": {
+        "tag": "RB ID",
+        "choices": ["[TEXT]"]
+    }
+};
+
+var listingAgent = new SearchFilter("Listing Agent");
+listingAgent.options = {
+    "listingAgent": {
+        "tag": "Listing Agent",
+        "choices": ["[TEXT]"]
+    }
+};
+
+var doorman = new SearchFilter("Doorman");
+doorman.options = {
+    "listingAgent": {
+        "tag": "Has a doorman",
+        "choices": []
+    }
+};
+
+var elevator = new SearchFilter("Elevator");
+elevator.options = {
+    "elevator": {
+        "tag": "Has an elevator",
+        "choices": []
+    }
+};
+
+var fitnessCenter = new SearchFilter("Fitness Center");
+fitnessCenter.options = {
+    "fitnessCenter": {
+        "tag": "Has a fitness center",
+        "choices": []
+    }
+};
+
+var pool = new SearchFilter("Pool");
+pool.options = {
+    "pool": {
+        "tag": "Has a swimming pool",
+        "choices": []
+    }
+};
+
+var utilitiesIncluded = new SearchFilter("Utilities Included");
+utilitiesIncluded.options = {
+    "utilitiesIncluded": {
+        "tag": "Utilities are included",
+        "choices": []
+    }
+};
+
+var sundeck = new SearchFilter("Sundeck / Grills");
+sundeck.options = {
+    "sundeck": {
+        "tag": "Has a sundeck or grills",
+        "choices": []
+    }
+};
+
+var wheelchair = new SearchFilter("Wheelchair Accessible");
+wheelchair.options = {
+    "wheelchair": {
+        "tag": "Is wheelchair accessible",
+        "choices": []
+    }
+};
+
+var furnished = new SearchFilter("Furnished");
+furnished.options = {
+    "furnished": {
+        "tag": "Is furnished",
+        "choices": []
+    }
+};
+
+var photos = new SearchFilter("Photos");
+photos.options = {
+    "photos": {
+        "tag": "Has Photos",
+        "choices": []
+    }
+};
+
+var deleaded = new SearchFilter("Deleaded");
+deleaded.options = {
+    "deleaded": {
+        "tag": "Has been deleaded",
+        "choices": []
+    }
+};
+
+var shortterm = new SearchFilter("Short Term Lease");
+shortterm.options = {
+    "shortterm": {
+        "tag": "Is a short term lease",
+        "choices": []
+    }
+};
+
+var mlsListings = new SearchFilter("MLS Listings");
+mlsListings.options = {
+    "mlslistings": {
+        "choices": ["Only MLS Listings", "Exclude MLS Listings", "Agency Exclusives Only"]
+    }
+};
+
+var ownerPays = new SearchFilter("Owner Pays");
+ownerPays.options = {
+    "yes": {
+        "tag": "Yes",
+        "choices": []
+    },
+    "negotiable": {
+        "tag": "Negotiable",
+        "choices": []
+    },
+    "cobroke": {
+        "tag": "Co-broke",
+        "choices": []
+    },
+    "no": {
+        "tag": "No",
+        "choices": []
+    }
+};
+
+var statusOfListings = new SearchFilter("Status");
+statusOfListings.options = {
+    "active": {
+        "tag": "Active Listings",
+        "choices": []
+    },
+    "pending": {
+        "tag": "Listings with applications pending",
+        "choices": []
+    },
+    "rented": {
+        "tag": "Rented Listings",
+        "choices": []
+    }
+};
+
+var ownershipType = new SearchFilter("Ownership Type (MC/PO)");
+ownershipType.options = {
+    "ownershipType": {
+        "tag": "Ownership Type",
+        "choices": ["Management Company (MC)", "Private Owner (PO)"]
+    }
+};
+
+var parking = new SearchFilter("Parking");
+parking.options = {
+    "offstreet": {
+        "tag": "Off Street Parking",
+        "choices": []
+    },
+    "onstreet": {
+        "tag": "On Street Parking",
+        "choices": []
+    },
+    "coveredfee": {
+        "tag": "Covered Parking for an Additional Fee",
+        "choices": []
+    },
+    "covered": {
+        "tag": "Covered Parking",
+        "choices": []
+    },
+    "shared": {
+        "tag": "Shared Driveway",
+        "choices": []
+    },
+    "other": {
+        "tag": "Other",
+        "choices": []
+    }
+};
+
+var pets = new SearchFilter("Pets");
+pets.options = {
+    "dog": {
+        "tag": "Dogs Allowed",
+        "choices": []
+    },
+    "cat": {
+        "tag": "Cats Allowed",
+        "choices": []
+    },
+    "other": {
+        "tag": "Other types of pets allowed",
+        "choices": []
+    }
+};
+
+var buildingType = new SearchFilter("Building Type");
+buildingType.options = {
+    "onefamily": {
+        "tag": "1 Family",
+        "choices": []
+    },
+    "twofamily": {
+        "tag": "2 Family",
+        "choices": []
+    },
+    "threefamily": {
+        "tag": "3 Family",
+        "choices": []
+    },
+    "fourfamily": {
+        "tag": "4 Family",
+        "choices": []
+    },
+    "brownstone": {
+        "tag": "Brownstone",
+        "choices": []
+    },
+    "condo": {
+        "tag": "Condo",
+        "choices": []
+    },
+    "duplex": {
+        "tag": "Duplex",
+        "choices": []
+    },
+    "highrise": {
+        "tag": "High Rise",
+        "choices": []
+    },
+    "midrise": {
+        "tag": "Mid-Rise",
+        "choices": []
+    },
+    "ranch": {
+        "tag": "Ranch",
+        "choices": []
+    },
+    "rowhouse": {
+        "tag": "Rowhouse",
+        "choices": []
+    },
+    "townhouse": {
+        "tag": "Townhouse / Townhome",
+        "choices": []
+    },
+    "victorian": {
+        "tag": "Victorian",
+        "choices": []
+    },
+    "walkup": {
+        "tag": "Walkup",
+        "choices": []
+    }
+};
+
+var proxToPublicTransit = new SearchFilter("Proximity to Public Transit");
+proxToPublicTransit.options = {
+    "within": {
+        "tag": "Within",
+        "choices": ["0.01mi","0.05mi","0.1mi","0.25mi","0.5mi","0.75mi","1mi","1.5mi","2mi","5mi","10mi"]
+    },
+    "type": {
+        "tag": "Type",
+        "choices": ["Bus","Subway","Rail","Other"]
+    }
+};
+
 var searchCriteria = {
-    "rent": {
+    "Rent": {
         "min": 2000
     }
 };
@@ -638,11 +932,11 @@ var searchCriteria = {
 // Run all the basic filters' draw box functions
 var runDrawBoxes = function(filterGiven) {
 
-    if (searchCriteria[filterGiven.name]) {
+    if (searchCriteria[filterGiven.id]) {
         var setState = function(thisChoiceName) {
-            searchFilters[filterGiven.name].options[thisChoiceName].state = searchCriteria[filterGiven.name][thisChoiceName];
+            searchFilters[filterGiven.id].options[thisChoiceName].state = searchCriteria[filterGiven.id][thisChoiceName];
         };
-        Object.keys(searchCriteria[filterGiven.name]).forEach(setState);
+        Object.keys(searchCriteria[filterGiven.id]).forEach(setState);
         filterGiven.drawUsed();
         filterGiven.selected = true;
     }
@@ -653,3 +947,4 @@ var runDrawBoxes = function(filterGiven) {
         filterGiven.drawSelected();
 };
 Object.values(searchFilters).forEach(runDrawBoxes);
+// sortFilters();
